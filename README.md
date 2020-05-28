@@ -4,11 +4,22 @@
 ![Docker Pulls](https://img.shields.io/docker/pulls/itglobal/dotnet-package-cache-gen?style=flat-square)
 ![GitHub](https://img.shields.io/github/license/itglobal/dotnet-package-cache-gen?style=flat-square)
 
-Tiny tool to generate cache files for .NET SDK projects.
+Tiny tool to generate cache files for Docker-powered .NET SDK projects.
 
-This toos helps you to setup a docker-based builds for .NET Core projects with proper caching.
+This toos helps you to setup a docker-based builds for .NET Core projects with proper Docker image caching.
 
-## How to use
+## When to use it
+
+This tool would be pretty handy if:
+
+* your project is built via Docker
+* and your project contains more than one `.csproj` file
+* and (optionally) your project uses more than one target framework
+
+If you don't build your project via Docker or you have only one `.csproj` file,
+you won't need **dotnet-package-cache-gen**.
+
+## How to use it
 
 1. Add the following lines to your build script:
 
@@ -40,6 +51,59 @@ This toos helps you to setup a docker-based builds for .NET Core projects with p
    COPY . /src
    RUN dotnet publish
    ```
+
+## How it works
+
+**dotnet-package-cache-gen** scans specified directory recursively for `*.csproj` files,
+skipping any `bin` and `obj` subdirectories.
+
+Every found project file is analyzed. Analyzer is able to process the following parts of project file:
+
+* `<TargetFramework>` element
+* `<TargetFrameworks>` element
+* `<PackageReference>` element within a plain `<ItemGroup>`
+* `<PackageReference>` element within a `<ItemGroup>` with condition.
+  The following conditions are supported:
+
+  * `Condition="'$(TargetFramework)' == 'TARGET_FRAMEWORK'"` - specifies `<ItemGroup>` which is applicable only to `TARGET_FRAMEWORK`.
+  * `Condition="'$(TargetFramework)' == 'TARGET_FRAMEWORK_1' Or '$(TargetFramework)' == 'TARGET_FRAMEWORK_2'"` - specifies
+    `<ItemGroup>` which is applicable only to `TARGET_FRAMEWORK_1` or `TARGET_FRAMEWORK_2`.
+
+Example:
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <!-- Project target frameworks -->
+        <TargetFrameworks>net40;net45;netstandard2.0</TargetFrameworks>
+    </PropertyGroup>
+
+    <!-- This packages are references when building for any target framework -->
+    <ItemGroup>
+        <PackageReference Include="Nuget.Package.Id.1" Version="1.0.0" />
+    </ItemGroup>
+
+    <!-- This packages are references when building for .NET Framework 4.0 -->
+    <ItemGroup Condition="'$(TargetFramework)' == 'net40'">
+        <PackageReference Include="Nuget.Package.Id.2" Version="1.0.0" />
+    </ItemGroup>
+
+    <!-- This packages are references when building for .NET Framework 4.5 -->
+    <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
+        <PackageReference Include="Nuget.Package.Id.3" Version="1.0.0" />
+    </ItemGroup>
+
+    <!-- This packages are references when building for .NET Standard 2.0 -->
+    <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+        <PackageReference Include="Nuget.Package.Id.4" Version="1.0.0" />
+    </ItemGroup>
+
+    <!-- This packages are references when building for .NET Framework 4.0 or .NET Framework 4.5 -->
+    <ItemGroup Condition="'$(TargetFramework)' == 'net40' Or '$(TargetFramework)' == 'net45'">
+        <PackageReference Include="Nuget.Package.Id.3" Version="1.0.0" />
+    </ItemGroup>
+</Project>
+```
 
 ## [License](LICENSE)
 
