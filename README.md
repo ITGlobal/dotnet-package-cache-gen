@@ -1,5 +1,9 @@
 # dotnet-package-cache-gen
 
+![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/itglobal/dotnet-package-cache-gen?style=flat-square)
+![Docker Pulls](https://img.shields.io/docker/pulls/itglobal/dotnet-package-cache-gen?style=flat-square)
+![GitHub](https://img.shields.io/github/license/itglobal/dotnet-package-cache-gen?style=flat-square)
+
 Tiny tool to generate cache files for .NET SDK projects.
 
 This toos helps you to setup a docker-based builds for .NET Core projects with proper caching.
