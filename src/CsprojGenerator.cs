@@ -7,20 +7,31 @@ namespace ITGlobal.DotNetPackageCacheGenerator
     {
         public static void Generate(PackageReferenceModel model, TextWriter writer)
         {
-            var targetFrameworks = model.PackageReferenceGroups.Select(_ => _.TargetFramework).ToArray();
-
             writer.WriteLine($"<!-- NuGet package cache -->");
             writer.WriteLine($"<Project Sdk=\"Microsoft.NET.Sdk.Web\">");
             writer.WriteLine($"    <PropertyGroup>");
-            switch (targetFrameworks.Length)
+
+            switch (model.TargetFrameworks.Length)
             {
                 case 0:
                     break;
                 case 1:
-                    writer.WriteLine($"        <TargetFramework>{targetFrameworks[0]}</TargetFramework>");
+                    writer.WriteLine($"        <TargetFramework>{model.TargetFrameworks[0]}</TargetFramework>");
                     break;
                 default:
-                    writer.WriteLine($"        <TargetFrameworks>{string.Join(";", targetFrameworks)}</TargetFrameworks>");
+                    writer.WriteLine($"        <TargetFrameworks>{string.Join(";", model.TargetFrameworks)}</TargetFrameworks>");
+                    break;
+            }
+
+            switch (model.RuntimeIdentifiers.Length)
+            {
+                case 0:
+                    break;
+                case 1:
+                    writer.WriteLine($"        <RuntimeIdentifier>{model.RuntimeIdentifiers[0]}</RuntimeIdentifier>");
+                    break;
+                default:
+                    writer.WriteLine($"        <RuntimeIdentifiers>{string.Join(";", model.RuntimeIdentifiers)}</RuntimeIdentifiers>");
                     break;
             }
 

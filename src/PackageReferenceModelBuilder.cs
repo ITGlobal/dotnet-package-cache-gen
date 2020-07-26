@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -22,6 +22,7 @@ namespace ITGlobal.DotNetPackageCacheGenerator
             }
         }
 
+        private readonly HashSet<string> _runtimeIdentifiers = new HashSet<string>();
         private readonly Dictionary<string, TargetFrameworkGroup> _packageReferencesByTargetFramework
             = new Dictionary<string, TargetFrameworkGroup>(StringComparer.OrdinalIgnoreCase);
 
@@ -42,12 +43,20 @@ namespace ITGlobal.DotNetPackageCacheGenerator
             packageGroup.Add(packageVersion);
         }
 
+        public void AddRuntimeIdentifier(string runtimeIdentifier)
+        {
+            _runtimeIdentifiers.Add(runtimeIdentifier);
+        }
+
         public PackageReferenceModel Build()
         {
             var packageReferenceGroups = BuildPackageReferenceGroups()
                 .OrderBy(_ => _.TargetFramework)
                 .ToArray();
-            return new PackageReferenceModel(packageReferenceGroups);
+            return new PackageReferenceModel(
+                _runtimeIdentifiers.ToArray(),
+                packageReferenceGroups
+            );
         }
 
         private IEnumerable<PackageReferenceGroup> BuildPackageReferenceGroups()

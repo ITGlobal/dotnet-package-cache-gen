@@ -11,24 +11,31 @@ namespace ITGlobal.DotNetPackageCacheGenerator
             var csproj = XDocument.Load(csprojPath);
             var projectRootElement = csproj.Element("Project") ?? throw new Exception("Malformed csproj");
 
-            var defaultTargetFrameworks = GetDefaultTargetFrameworks(projectRootElement);
+            // Load RuntimeIdentifier(s)
+            var runtimeIdentifiers = GetRuntimeIdentifiers(projectRootElement);
+            foreach (var runtimeIdentifier in runtimeIdentifiers)
+            {
+                builder.AddRuntimeIdentifier(runtimeIdentifier);
+            }
 
+            // Load package references
+            var defaultTargetFrameworks = GetDefaultTargetFrameworks(projectRootElement);
             LoadPackageReferences(projectRootElement, defaultTargetFrameworks, builder);
         }
 
         private static string[] GetDefaultTargetFrameworks(XElement projectRootElement)
         {
             var defaultTargetFramework = projectRootElement
-                                             .Elements("PropertyGroup")
-                                             .Elements("TargetFramework")
-                                             .FirstOrDefault()
-                                             ?.Value ?? "";
+                .Elements("PropertyGroup")
+                .Elements("TargetFramework")
+                .FirstOrDefault()
+                ?.Value ?? "";
             var defaultTargetFrameworks = projectRootElement
-                                              .Elements("PropertyGroup")
-                                              .Elements("TargetFrameworks")
-                                              .FirstOrDefault()
-                                              ?.Value ?? "";
-            
+                .Elements("PropertyGroup")
+                .Elements("TargetFrameworks")
+                .FirstOrDefault()
+                ?.Value ?? "";
+
             var targetFrameworks = new[] {defaultTargetFramework}
                 .Concat(defaultTargetFrameworks.Split(";"))
                 .Where(x => !string.IsNullOrWhiteSpace(x))
@@ -43,6 +50,28 @@ namespace ITGlobal.DotNetPackageCacheGenerator
             return targetFrameworks;
         }
 
+        private static string[] GetRuntimeIdentifiers(XElement projectRootElement)
+        {
+            var defaultRuntimeIdentifier = projectRootElement
+                .Elements("PropertyGroup")
+                .Elements("RuntimeIdentifier")
+                .FirstOrDefault()
+                ?.Value ?? "";
+            var defaultRuntimeIdentifiers = projectRootElement
+                .Elements("PropertyGroup")
+                .Elements("RuntimeIdentifiers")
+                .FirstOrDefault()
+                ?.Value ?? "";
+
+            var runtimeIdentifiers = new[] {defaultRuntimeIdentifier}
+                .Concat(defaultRuntimeIdentifiers.Split(";"))
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .ToArray();
+
+            return runtimeIdentifiers;
+        }
+
         private static void LoadPackageReferences(
             XElement projectRootElement,
             string[] defaultTargetFrameworks,
@@ -53,7 +82,7 @@ namespace ITGlobal.DotNetPackageCacheGenerator
                 string[] itemGroupTargetFrameworks = null;
                 foreach (var packageReference in itemGroup.Elements("PackageReference"))
                 {
-                    var packageId = packageReference.Attribute("Include").Value;
+                    var packageId = packageReference.Attribute("Include")!.Value;
                     var packageVersion = packageReference.Attribute("Version")?.Value;
                     if (string.IsNullOrEmpty(packageVersion))
                     {
