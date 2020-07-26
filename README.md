@@ -63,6 +63,8 @@ Every found project file is analyzed. Analyzer is able to process the following 
 * `<TargetFrameworks>` element
 * `<RuntimeIdentifier>` element
 * `<RuntimeIdentifiers>` element
+* `<Import>` element
+* `<Sdk>` element
 * `<PackageReference>` element within a plain `<ItemGroup>`
 * `<PackageReference>` element within a `<ItemGroup>` with condition.
   The following conditions are supported:

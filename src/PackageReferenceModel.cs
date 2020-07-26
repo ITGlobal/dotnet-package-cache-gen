@@ -9,9 +9,11 @@ namespace ITGlobal.DotNetPackageCacheGenerator
     public sealed class PackageReferenceModel
     {
         public PackageReferenceModel(
+            string[] sdks,
             string[] runtimeIdentifiers,
             PackageReferenceGroup[] packageReferenceGroups)
         {
+            Sdks = sdks;
             PackageReferenceGroups = packageReferenceGroups;
             RuntimeIdentifiers = runtimeIdentifiers;
             TargetFrameworks = packageReferenceGroups.Select(_ => _.TargetFramework).ToArray();
@@ -21,6 +23,7 @@ namespace ITGlobal.DotNetPackageCacheGenerator
             Hash = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
         }
 
+        public string[] Sdks { get; }
         public string[] RuntimeIdentifiers { get; }
         public string[] TargetFrameworks { get; }
         public PackageReferenceGroup[] PackageReferenceGroups { get; }

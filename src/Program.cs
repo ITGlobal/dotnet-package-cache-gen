@@ -44,6 +44,22 @@ namespace ITGlobal.DotNetPackageCacheGenerator
                     Console.Error.WriteLine($"  - {packageReference.Id} (version {packageReference.Version})");
                 }
             }
+            Console.Error.WriteLine();
+            Console.Error.WriteLine("SDK(s):");
+            foreach (var sdk in model.Sdks)
+            {
+                Console.Error.WriteLine($"  - {sdk}");
+            }
+
+            if (model.RuntimeIdentifiers.Length > 0)
+            {
+                Console.Error.WriteLine();
+                Console.Error.WriteLine("RuntimeIdentifier(s):");
+                foreach (var rid in model.RuntimeIdentifiers)
+                {
+                    Console.Error.WriteLine($"  - {rid}");
+                }
+            }
         }
     }
 };

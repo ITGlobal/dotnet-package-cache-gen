@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 
@@ -11,6 +12,13 @@ namespace ITGlobal.DotNetPackageCacheGenerator
             var csproj = XDocument.Load(csprojPath);
             var projectRootElement = csproj.Element("Project") ?? throw new Exception("Malformed csproj");
 
+            // Load Sdk(s)
+            var sdks = GetSdks(projectRootElement);
+            foreach (var sdk in sdks)
+            {
+                builder.AddSdk(sdk);
+            }
+
             // Load RuntimeIdentifier(s)
             var runtimeIdentifiers = GetRuntimeIdentifiers(projectRootElement);
             foreach (var runtimeIdentifier in runtimeIdentifiers)
@@ -21,6 +29,61 @@ namespace ITGlobal.DotNetPackageCacheGenerator
             // Load package references
             var defaultTargetFrameworks = GetDefaultTargetFrameworks(projectRootElement);
             LoadPackageReferences(projectRootElement, defaultTargetFrameworks, builder);
+        }
+
+        private static string[] GetSdks(XElement projectRootElement)
+        {
+            return GetSdksIterator()
+                .Where(x => !string.IsNullOrEmpty(x))
+                .Distinct()
+                .ToArray();
+
+            IEnumerable<string> GetSdksIterator()
+            {
+                var defaultSdk = projectRootElement.Attribute("Sdk")?.Value;
+                yield return defaultSdk;
+
+                // Scan <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk"/> elements
+                foreach (var importElement in projectRootElement.Elements("Import"))
+                {
+                    if (importElement.Attribute("Project")?.Value != "Sdk.props")
+                    {
+                        continue;
+                    }
+
+                    var sdk = importElement.Attribute("Sdk")?.Value;
+                    yield return sdk;
+                }
+
+                // Scan <Sdk Name="Microsoft.NET.Sdk" /> elements
+                foreach (var sdkElement in projectRootElement.Elements("Sdk"))
+                {
+                    var sdk = sdkElement.Attribute("Name")?.Value;
+                    yield return sdk;
+                }
+            }
+        }
+
+        private static string[] GetRuntimeIdentifiers(XElement projectRootElement)
+        {
+            var defaultRuntimeIdentifier = projectRootElement
+                .Elements("PropertyGroup")
+                .Elements("RuntimeIdentifier")
+                .FirstOrDefault()
+                ?.Value ?? "";
+            var defaultRuntimeIdentifiers = projectRootElement
+                .Elements("PropertyGroup")
+                .Elements("RuntimeIdentifiers")
+                .FirstOrDefault()
+                ?.Value ?? "";
+
+            var runtimeIdentifiers = new[] {defaultRuntimeIdentifier}
+                .Concat(defaultRuntimeIdentifiers.Split(";"))
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .ToArray();
+
+            return runtimeIdentifiers;
         }
 
         private static string[] GetDefaultTargetFrameworks(XElement projectRootElement)
@@ -48,28 +111,6 @@ namespace ITGlobal.DotNetPackageCacheGenerator
             }
 
             return targetFrameworks;
-        }
-
-        private static string[] GetRuntimeIdentifiers(XElement projectRootElement)
-        {
-            var defaultRuntimeIdentifier = projectRootElement
-                .Elements("PropertyGroup")
-                .Elements("RuntimeIdentifier")
-                .FirstOrDefault()
-                ?.Value ?? "";
-            var defaultRuntimeIdentifiers = projectRootElement
-                .Elements("PropertyGroup")
-                .Elements("RuntimeIdentifiers")
-                .FirstOrDefault()
-                ?.Value ?? "";
-
-            var runtimeIdentifiers = new[] {defaultRuntimeIdentifier}
-                .Concat(defaultRuntimeIdentifiers.Split(";"))
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Distinct()
-                .ToArray();
-
-            return runtimeIdentifiers;
         }
 
         private static void LoadPackageReferences(

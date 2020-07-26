@@ -1,5 +1,4 @@
 using System.IO;
-using System.Linq;
 
 namespace ITGlobal.DotNetPackageCacheGenerator
 {
@@ -8,8 +7,25 @@ namespace ITGlobal.DotNetPackageCacheGenerator
         public static void Generate(PackageReferenceModel model, TextWriter writer)
         {
             writer.WriteLine($"<!-- NuGet package cache -->");
-            writer.WriteLine($"<Project Sdk=\"Microsoft.NET.Sdk.Web\">");
+            switch (model.Sdks.Length)
+            {
+                case 1:
+                    writer.WriteLine($"<Project Sdk=\"{model.Sdks[0]}\">");
+                    break;
+                default:
+                    writer.WriteLine($"<Project>");
+                    break;
+            }
+
             writer.WriteLine($"    <PropertyGroup>");
+
+            if (model.Sdks.Length != 1)
+            {
+                foreach (var sdk in model.Sdks)
+                {
+                    writer.WriteLine($"     <Sdk Name=\"{sdk}\" />");
+                }
+            }
 
             switch (model.TargetFrameworks.Length)
             {
@@ -47,6 +63,8 @@ namespace ITGlobal.DotNetPackageCacheGenerator
                 }
                 writer.WriteLine($"    </ItemGroup>");
             }
+
+
             writer.WriteLine($"</Project>");
         }
     }

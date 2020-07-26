@@ -22,6 +22,7 @@ namespace ITGlobal.DotNetPackageCacheGenerator
             }
         }
 
+        private readonly HashSet<string> _sdks = new HashSet<string>();
         private readonly HashSet<string> _runtimeIdentifiers = new HashSet<string>();
         private readonly Dictionary<string, TargetFrameworkGroup> _packageReferencesByTargetFramework
             = new Dictionary<string, TargetFrameworkGroup>(StringComparer.OrdinalIgnoreCase);
@@ -43,6 +44,10 @@ namespace ITGlobal.DotNetPackageCacheGenerator
             packageGroup.Add(packageVersion);
         }
 
+        public void AddSdk(string sdk)
+        {
+            _sdks.Add(sdk);
+        }
         public void AddRuntimeIdentifier(string runtimeIdentifier)
         {
             _runtimeIdentifiers.Add(runtimeIdentifier);
@@ -54,6 +59,7 @@ namespace ITGlobal.DotNetPackageCacheGenerator
                 .OrderBy(_ => _.TargetFramework)
                 .ToArray();
             return new PackageReferenceModel(
+                _sdks.ToArray(),
                 _runtimeIdentifiers.ToArray(),
                 packageReferenceGroups
             );
