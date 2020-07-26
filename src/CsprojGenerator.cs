@@ -1,4 +1,7 @@
 using System.IO;
+using System.Text;
+using System.Xml;
+using System.Xml.Linq;
 
 namespace ITGlobal.DotNetPackageCacheGenerator
 {
@@ -6,36 +9,48 @@ namespace ITGlobal.DotNetPackageCacheGenerator
     {
         public static void Generate(PackageReferenceModel model, TextWriter writer)
         {
-            writer.WriteLine($"<!-- NuGet package cache -->");
-            switch (model.Sdks.Length)
-            {
-                case 1:
-                    writer.WriteLine($"<Project Sdk=\"{model.Sdks[0]}\">");
-                    break;
-                default:
-                    writer.WriteLine($"<Project>");
-                    break;
-            }
+            var xml = GenerateXml(model);
+            using var w = XmlWriter.Create(writer,
+                new XmlWriterSettings
+                {
+                    OmitXmlDeclaration = true,
+                    Encoding = Encoding.UTF8,
+                    Indent = true,
+                }
+            );
+            xml.WriteTo(w);
+            writer.WriteLine();
+        }
 
-            writer.WriteLine($"    <PropertyGroup>");
+        private static XDocument GenerateXml(PackageReferenceModel model)
+        {
+            var projectElement = new XElement("Project");
+
+            if (model.Sdks.Length == 1)
+            {
+                projectElement.SetAttributeValue("Sdk", model.Sdks[0]);
+            }
 
             if (model.Sdks.Length != 1)
             {
                 foreach (var sdk in model.Sdks)
                 {
-                    writer.WriteLine($"     <Sdk Name=\"{sdk}\" />");
+                    projectElement.Add(new XElement("Sdk", new XAttribute("Name", sdk)));
                 }
             }
+
+            var propertyGroup = new XElement("PropertyGroup");
+            projectElement.Add(propertyGroup);
 
             switch (model.TargetFrameworks.Length)
             {
                 case 0:
                     break;
                 case 1:
-                    writer.WriteLine($"        <TargetFramework>{model.TargetFrameworks[0]}</TargetFramework>");
+                    propertyGroup.Add(new XElement("TargetFramework", model.TargetFrameworks[0]));
                     break;
                 default:
-                    writer.WriteLine($"        <TargetFrameworks>{string.Join(";", model.TargetFrameworks)}</TargetFrameworks>");
+                    propertyGroup.Add(new XElement("TargetFrameworks", string.Join(";", model.TargetFrameworks)));
                     break;
             }
 
@@ -44,28 +59,54 @@ namespace ITGlobal.DotNetPackageCacheGenerator
                 case 0:
                     break;
                 case 1:
-                    writer.WriteLine($"        <RuntimeIdentifier>{model.RuntimeIdentifiers[0]}</RuntimeIdentifier>");
+                    propertyGroup.Add(new XElement("RuntimeIdentifier", model.RuntimeIdentifiers[0]));
                     break;
                 default:
-                    writer.WriteLine($"        <RuntimeIdentifiers>{string.Join(";", model.RuntimeIdentifiers)}</RuntimeIdentifiers>");
+                    propertyGroup.Add(new XElement("RuntimeIdentifiers", string.Join(";", model.RuntimeIdentifiers)));
                     break;
             }
 
-            writer.WriteLine($"        <_PackageCacheHash>{model.Hash}</_PackageCacheHash>");
-            writer.WriteLine($"    </PropertyGroup>");
+            propertyGroup.Add(new XElement("_PackageCacheHash", model.Hash));
+
             foreach (var packageReferenceGroup in model.PackageReferenceGroups)
             {
+                var itemGroup = new XElement("ItemGroup");
+                projectElement.Add(itemGroup);
+
                 var condition = $"'$(TargetFramework)' == '{packageReferenceGroup.TargetFramework}'";
-                writer.WriteLine($"    <ItemGroup Condition=\"{condition}\">");
+                itemGroup.SetAttributeValue("Condition", condition);
                 foreach (var packageReference in packageReferenceGroup.PackageReferences)
                 {
-                    writer.WriteLine($"        <PackageReference Include=\"{packageReference.Id}\" Version=\"{packageReference.Version}\" />");
+                    itemGroup.Add(new XElement(
+                            "PackageReference",
+                            new XAttribute("Include", packageReference.Id),
+                            new XAttribute("Version", packageReference.Version)
+                        )
+                    );
                 }
-                writer.WriteLine($"    </ItemGroup>");
             }
+            /*
+             *  
+                       
+                        foreach (var packageReferenceGroup in model.PackageReferenceGroups)
+                        {
+                            var condition = $"'$(TargetFramework)' == '{packageReferenceGroup.TargetFramework}'";
+                            writer.WriteLine($"    <ItemGroup Condition=\"{condition}\">");
+                            foreach (var packageReference in packageReferenceGroup.PackageReferences)
+                            {
+                                writer.WriteLine($"        <PackageReference Include=\"{packageReference.Id}\" Version=\"{packageReference.Version}\" />");
+                            }
+                            writer.WriteLine($"    </ItemGroup>");
+                        }
 
 
-            writer.WriteLine($"</Project>");
+                        writer.WriteLine($"</Project>");
+             */
+
+            return new XDocument(
+                new XComment("NuGet package cache"),
+                projectElement
+            );
         }
     }
 }
