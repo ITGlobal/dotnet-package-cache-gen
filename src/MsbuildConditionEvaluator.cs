@@ -8,6 +8,11 @@ namespace ITGlobal.DotNetPackageCacheGenerator
     {
         public static string[] EvaluateTargetFrameworks(string condition)
         {
+            if (!condition.Contains("$(TargetFramework)"))
+            {
+                return null;
+            }
+
             var conditionClauses = Regex.Split(condition, "^or$");
 
             var tf = conditionClauses
@@ -28,8 +33,7 @@ namespace ITGlobal.DotNetPackageCacheGenerator
             var m = Regex.Match(clause, @"\s*(|')\$\(TargetFramework\)(|')\s*==\s*'([^']+)'s*");
             if (!m.Success)
             {
-                Console.Error.WriteLine($"Warning: MSBuild condition is not supported: \"{clause}\"");
-                return null;
+                throw new Exception($"MSBuild condition is not supported: \"{clause}\"");
             }
 
             return m.Groups[3].Value;
