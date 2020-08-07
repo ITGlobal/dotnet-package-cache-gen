@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -28,7 +28,8 @@ namespace ITGlobal.DotNetPackageCacheGenerator
             var m = Regex.Match(clause, @"\s*(|')\$\(TargetFramework\)(|')\s*==\s*'([^']+)'s*");
             if (!m.Success)
             {
-                throw new Exception($"MSBuild condition is not supported: \"{clause}\"");
+                Console.Error.WriteLine($"Warning: MSBuild condition is not supported: \"{clause}\"");
+                return null;
             }
 
             return m.Groups[3].Value;
