@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -8,6 +8,11 @@ namespace ITGlobal.DotNetPackageCacheGenerator
     {
         public static string[] EvaluateTargetFrameworks(string condition)
         {
+            if (!condition.Contains("$(TargetFramework)"))
+            {
+                return null;
+            }
+
             var conditionClauses = Regex.Split(condition, "^or$");
 
             var tf = conditionClauses
