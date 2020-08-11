@@ -34,6 +34,12 @@ you won't need **dotnet-package-cache-gen**.
 
    `./build/package-cache.xml` file should be gitignored but not dockerignored.
 
+   > If you need to get detailed output, add a `-v` or `--verbose` flag to the `docker run` command:
+   >
+   > ```shell
+   > docker run --rm -v $(pwd):/source itglobal/dotnet-package-cache-gen -v > ./build/package-cache.xml
+   > ```
+
 2. Add the following lines to your Dockerfile:
 
    ```Dockerfile
@@ -41,7 +47,7 @@ you won't need **dotnet-package-cache-gen**.
 
    # Copy cache file and run "dotnet restore" against it
    COPY ./build/package-cache.xml /build-tmp/
-   RUN dotnet restore -v q /build-tmp/package-cache.xml /nologo && rm -rf /build-tmp
+   RUN dotnet restore -v q /build-tmp/package-cache.xml /nologo /nowarn:msb4011 && rm -rf /build-tmp
 
    # Everything above this line will be cached
    # Docker will not re-run "dotnet restore" command unless list of referenced nuget packages,

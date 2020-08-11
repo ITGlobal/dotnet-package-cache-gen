@@ -22,10 +22,16 @@ namespace ITGlobal.DotNetPackageCacheGenerator
             }
         }
 
+        private readonly string _rootPath;
         private readonly HashSet<string> _sdks = new HashSet<string>();
         private readonly HashSet<string> _runtimeIdentifiers = new HashSet<string>();
         private readonly Dictionary<string, TargetFrameworkGroup> _packageReferencesByTargetFramework
             = new Dictionary<string, TargetFrameworkGroup>(StringComparer.OrdinalIgnoreCase);
+
+        public PackageReferenceModelBuilder(string rootPath)
+        {
+            _rootPath = rootPath;
+        }
 
         public void AddPackage(string targetFramework, string packageId, string packageVersion)
         {
@@ -59,6 +65,7 @@ namespace ITGlobal.DotNetPackageCacheGenerator
                 .OrderBy(_ => _.TargetFramework)
                 .ToArray();
             return new PackageReferenceModel(
+                _rootPath,
                 _sdks.ToArray(),
                 _runtimeIdentifiers.ToArray(),
                 packageReferenceGroups

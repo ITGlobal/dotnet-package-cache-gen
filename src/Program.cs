@@ -5,20 +5,29 @@ namespace ITGlobal.DotNetPackageCacheGenerator
 {
     public static class Program
     {
+
         public static void Main(string[] args)
         {
-            if (args.Length != 1)
+
+            if (!TryParseCommandLine(args, out var rootPath, out var verbose, out var help))
             {
-                Console.Error.WriteLine("USAGE:");
-                Console.Error.WriteLine("dotnet-package-cache-gen <path-to-directory>");
+                PrintUsage();
                 Environment.Exit(1);
                 return;
             }
 
-            var builder = new PackageReferenceModelBuilder();
-            var rootPath = args[0];
+            if (help)
+            {
+                PrintUsage();
+                PrintUsage();
+                Environment.Exit(0);
+                return;
+            }
+
+            Log.IsEnabled = verbose;
+
             rootPath = Path.GetFullPath(rootPath);
-            Console.Error.WriteLine($"RootPath: {rootPath}");
+            var builder = new PackageReferenceModelBuilder(rootPath);
             var projectFiles = CsprojLocator.Locate(rootPath);
 
             foreach (var projectFile in projectFiles)
@@ -27,25 +36,70 @@ namespace ITGlobal.DotNetPackageCacheGenerator
             }
 
             var model = builder.Build();
-            CsprojGenerator.Generate(model, Console.Out);
-
             PrintModelData(model);
+
+            CsprojGenerator.Generate(model, Console.Out);
+        }
+
+        private static bool TryParseCommandLine(string[] args, out string rootPath, out bool verbose, out bool help)
+        {
+            rootPath = default;
+            verbose = default;
+            help = default;
+
+            foreach (var arg in args)
+            {
+                switch (arg)
+                {
+                    case "-h":
+                        help = true;
+                        break;
+                    case "--help":
+                        help = true;
+                        break;
+                    case "-v":
+                        verbose = true;
+                        break;
+                    case "--verbose":
+                        verbose = true;
+                        break;
+                    default:
+                        if (rootPath != null)
+                        {
+                            return false;
+                        }
+
+                        rootPath = arg;
+                        break;
+                }
+            }
+
+            return help || rootPath != null;
+        }
+
+        private static void PrintUsage()
+        {
+            Console.Error.WriteLine("USAGE:");
+            Console.Error.WriteLine("dotnet-package-cache-gen [-v|--verbose] [-h|--help] <path-to-directory>");
         }
 
         private static void PrintModelData(PackageReferenceModel model)
         {
-            Console.Error.WriteLine("Nuget package cache:");
-            Console.Error.WriteLine();
+            Console.Error.WriteLine("# Nuget package cache");
+            Console.Error.WriteLine($"root_path: {model.RootPath}");
+            Console.Error.WriteLine($"hash: {model.Hash}");
+            Console.Error.WriteLine("target_frameworks:");
             foreach (var packageReferenceGroup in model.PackageReferenceGroups)
             {
-                Console.Error.WriteLine($"For \"{packageReferenceGroup.TargetFramework}\":");
+                Console.Error.WriteLine($"  - framework: {packageReferenceGroup.TargetFramework}");
+                Console.Error.WriteLine($"    packages:");
                 foreach (var packageReference in packageReferenceGroup.PackageReferences)
                 {
-                    Console.Error.WriteLine($"  - {packageReference.Id} (version {packageReference.Version})");
+                    Console.Error.WriteLine($"    - id: {packageReference.Id}");
+                    Console.Error.WriteLine($"      version: {packageReference.Version}");
                 }
             }
-            Console.Error.WriteLine();
-            Console.Error.WriteLine("SDK(s):");
+            Console.Error.WriteLine("sdk:");
             foreach (var sdk in model.Sdks)
             {
                 Console.Error.WriteLine($"  - {sdk}");
@@ -53,13 +107,13 @@ namespace ITGlobal.DotNetPackageCacheGenerator
 
             if (model.RuntimeIdentifiers.Length > 0)
             {
-                Console.Error.WriteLine();
-                Console.Error.WriteLine("RuntimeIdentifier(s):");
+                Console.Error.WriteLine("runtimes:");
                 foreach (var rid in model.RuntimeIdentifiers)
                 {
                     Console.Error.WriteLine($"  - {rid}");
                 }
             }
+            Console.Error.WriteLine();
         }
     }
 };

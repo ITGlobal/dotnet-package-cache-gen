@@ -2,7 +2,7 @@
   "profiles": {
     "dotnet-package-cache-gen": {
         "commandName": "Project",
-        "commandLineArgs": "../../../.."
+        "commandLineArgs": "../../../.. -v"
     }
   }
 }

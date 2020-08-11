@@ -7,6 +7,7 @@ namespace ITGlobal.DotNetPackageCacheGenerator
 {
     public static class CsprojParser
     {
+
         public static void Parse(string csprojPath, PackageReferenceModelBuilder builder)
         {
             var csproj = XDocument.Load(csprojPath);
@@ -16,6 +17,7 @@ namespace ITGlobal.DotNetPackageCacheGenerator
             var sdks = GetSdks(projectRootElement);
             foreach (var sdk in sdks)
             {
+                Log.WriteLine($"{csprojPath}: found SDK \"{sdk}\"");
                 builder.AddSdk(sdk);
             }
 
@@ -23,12 +25,13 @@ namespace ITGlobal.DotNetPackageCacheGenerator
             var runtimeIdentifiers = GetRuntimeIdentifiers(projectRootElement);
             foreach (var runtimeIdentifier in runtimeIdentifiers)
             {
+                Log.WriteLine($"{csprojPath}: found RID \"{runtimeIdentifier}\"");
                 builder.AddRuntimeIdentifier(runtimeIdentifier);
             }
 
             // Load package references
             var defaultTargetFrameworks = GetDefaultTargetFrameworks(projectRootElement);
-            LoadPackageReferences(projectRootElement, defaultTargetFrameworks, builder);
+            LoadPackageReferences(csprojPath, projectRootElement, defaultTargetFrameworks, builder);
         }
 
         private static string[] GetSdks(XElement projectRootElement)
@@ -67,15 +70,17 @@ namespace ITGlobal.DotNetPackageCacheGenerator
         private static string[] GetRuntimeIdentifiers(XElement projectRootElement)
         {
             var defaultRuntimeIdentifier = projectRootElement
-                .Elements("PropertyGroup")
-                .Elements("RuntimeIdentifier")
-                .FirstOrDefault()
-                ?.Value ?? "";
+                                               .Elements("PropertyGroup")
+                                               .Elements("RuntimeIdentifier")
+                                               .FirstOrDefault()
+                                               ?.Value ??
+                                           "";
             var defaultRuntimeIdentifiers = projectRootElement
-                .Elements("PropertyGroup")
-                .Elements("RuntimeIdentifiers")
-                .FirstOrDefault()
-                ?.Value ?? "";
+                                                .Elements("PropertyGroup")
+                                                .Elements("RuntimeIdentifiers")
+                                                .FirstOrDefault()
+                                                ?.Value ??
+                                            "";
 
             var runtimeIdentifiers = new[] {defaultRuntimeIdentifier}
                 .Concat(defaultRuntimeIdentifiers.Split(";"))
@@ -89,15 +94,17 @@ namespace ITGlobal.DotNetPackageCacheGenerator
         private static string[] GetDefaultTargetFrameworks(XElement projectRootElement)
         {
             var defaultTargetFramework = projectRootElement
-                .Elements("PropertyGroup")
-                .Elements("TargetFramework")
-                .FirstOrDefault()
-                ?.Value ?? "";
+                                             .Elements("PropertyGroup")
+                                             .Elements("TargetFramework")
+                                             .FirstOrDefault()
+                                             ?.Value ??
+                                         "";
             var defaultTargetFrameworks = projectRootElement
-                .Elements("PropertyGroup")
-                .Elements("TargetFrameworks")
-                .FirstOrDefault()
-                ?.Value ?? "";
+                                              .Elements("PropertyGroup")
+                                              .Elements("TargetFrameworks")
+                                              .FirstOrDefault()
+                                              ?.Value ??
+                                          "";
 
             var targetFrameworks = new[] {defaultTargetFramework}
                 .Concat(defaultTargetFrameworks.Split(";"))
@@ -114,6 +121,7 @@ namespace ITGlobal.DotNetPackageCacheGenerator
         }
 
         private static void LoadPackageReferences(
+            string csprojPath,
             XElement projectRootElement,
             string[] defaultTargetFrameworks,
             PackageReferenceModelBuilder builder)
@@ -130,17 +138,21 @@ namespace ITGlobal.DotNetPackageCacheGenerator
                         continue;
                     }
 
-                    itemGroupTargetFrameworks ??= ResolveTargetFrameworks(itemGroup) ?? defaultTargetFrameworks;
+                    itemGroupTargetFrameworks ??=
+                        ResolveTargetFrameworks(csprojPath, itemGroup) ?? defaultTargetFrameworks;
 
                     foreach (var targetFramework in itemGroupTargetFrameworks)
                     {
+                        Log.WriteLine(
+                            $"{csprojPath}: found package \"{packageId}\" (v{packageVersion}, for {targetFramework})"
+                        );
                         builder.AddPackage(targetFramework, packageId, packageVersion);
                     }
                 }
             }
         }
 
-        private static string[] ResolveTargetFrameworks(XElement itemGroup)
+        private static string[] ResolveTargetFrameworks(string csprojPath, XElement itemGroup)
         {
             var condition = itemGroup.Attribute("Condition")?.Value;
             if (string.IsNullOrEmpty(condition))
@@ -148,8 +160,9 @@ namespace ITGlobal.DotNetPackageCacheGenerator
                 return null;
             }
 
-            var targetFrameworks = MsbuildConditionEvaluator.EvaluateTargetFrameworks(condition);
+            var targetFrameworks = MsbuildConditionEvaluator.EvaluateTargetFrameworks(csprojPath, condition);
             return targetFrameworks;
         }
+
     }
 }
