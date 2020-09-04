@@ -30,7 +30,8 @@ namespace ITGlobal.DotNetPackageCacheGenerator
             {
                 var name = Path.GetFileName(subDirectory);
                 if (!string.Equals(name, "bin", StringComparison.OrdinalIgnoreCase) &&
-                    !string.Equals(name, "obj", StringComparison.OrdinalIgnoreCase))
+                    !string.Equals(name, "obj", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(name, "node_modules", StringComparison.OrdinalIgnoreCase))
                 {
                     FindProjectFiles(subDirectory, projectFiles);
                 }

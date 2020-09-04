@@ -1,12 +1,13 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace ITGlobal.DotNetPackageCacheGenerator
 {
     public static class Program
     {
 
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
 
             if (!TryParseCommandLine(args, out var rootPath, out var verbose, out var help))
@@ -38,7 +39,7 @@ namespace ITGlobal.DotNetPackageCacheGenerator
             var model = builder.Build();
             PrintModelData(model);
 
-            CsprojGenerator.Generate(model, Console.Out);
+            await CsprojGenerator.Generate(model, Console.Out);
         }
 
         private static bool TryParseCommandLine(string[] args, out string rootPath, out bool verbose, out bool help)

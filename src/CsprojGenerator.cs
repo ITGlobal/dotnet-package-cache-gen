@@ -1,5 +1,7 @@
 using System.IO;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -7,7 +9,7 @@ namespace ITGlobal.DotNetPackageCacheGenerator
 {
     public static class CsprojGenerator
     {
-        public static void Generate(PackageReferenceModel model, TextWriter writer)
+        public static async Task Generate(PackageReferenceModel model, TextWriter writer)
         {
             var xml = GenerateXml(model);
             using var w = XmlWriter.Create(writer,
@@ -16,10 +18,11 @@ namespace ITGlobal.DotNetPackageCacheGenerator
                     OmitXmlDeclaration = true,
                     Encoding = Encoding.UTF8,
                     Indent = true,
+                    Async = true
                 }
             );
-            xml.WriteTo(w);
-            writer.WriteLine();
+            await xml.WriteToAsync(w, CancellationToken.None);
+            await writer.WriteLineAsync();
         }
 
         private static XDocument GenerateXml(PackageReferenceModel model)
@@ -86,8 +89,8 @@ namespace ITGlobal.DotNetPackageCacheGenerator
                 }
             }
             /*
-             *  
-                       
+             *
+
                         foreach (var packageReferenceGroup in model.PackageReferenceGroups)
                         {
                             var condition = $"'$(TargetFramework)' == '{packageReferenceGroup.TargetFramework}'";
