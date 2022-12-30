@@ -1,6 +1,5 @@
 # dotnet-package-cache-gen
 
-![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/itglobal/dotnet-package-cache-gen?style=flat-square)
 ![Docker Pulls](https://img.shields.io/docker/pulls/itglobal/dotnet-package-cache-gen?style=flat-square)
 ![GitHub](https://img.shields.io/github/license/itglobal/dotnet-package-cache-gen?style=flat-square)
 
@@ -24,7 +23,7 @@ you won't need **dotnet-package-cache-gen**.
 1. Add the following lines to your build script:
 
    ```shell
-   docker run --rm -v $(pwd):/source itglobal/dotnet-package-cache-gen > ./build/package-cache.xml
+   docker run --rm -v $(pwd):/source ghcr.io/itglobal/dotnet-package-cache-gen:latest > ./build/package-cache.xml
    ```
 
    This command will generate Nuget package cache file from projects in current directory
@@ -37,7 +36,7 @@ you won't need **dotnet-package-cache-gen**.
    > If you need to get detailed output, add a `-v` or `--verbose` flag to the `docker run` command:
    >
    > ```shell
-   > docker run --rm -v $(pwd):/source itglobal/dotnet-package-cache-gen -v > ./build/package-cache.xml
+   > docker run --rm -v $(pwd):/source ghcr.io/itglobal/dotnet-package-cache-gen:latest -v > ./build/package-cache.xml
    > ```
 
 2. Add the following lines to your Dockerfile:
